@@ -176,6 +176,40 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/tele
 
 After the first deploy, set `AUTH_URL` and `NEXT_PUBLIC_APP_URL` to your production URL.
 
+Register the Telegram webhook (once):
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://<your-app.vercel.app>/api/telegram/webhook
+```
+
+This calls `setWebhook` and returns `webhookInfo`. Ensure `url` matches your app and `last_error_message` is empty.
+
+Or manually:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://<your-domain>/api/telegram/webhook",
+    "secret_token": "<TELEGRAM_WEBHOOK_SECRET>"
+  }'
+```
+
+`TELEGRAM_WEBHOOK_SECRET` must match on Vercel **and** in `setWebhook`. If you set a secret in one place only, Telegram gets `401` and the bot stays silent.
+
+### Vercel Deployment Protection (bot silent / webhook 401)
+
+If `getWebhookInfo` shows `last_error_message: Wrong response from the webhook: 401 Unauthorized`, Telegram is hitting **Vercel Authentication**, not your app. Common when `NEXT_PUBLIC_APP_URL` points at a **preview** URL (`*-git-*-*.vercel.app`) with protection enabled.
+
+**Fix (pick one):**
+
+1. **Production domain (recommended)** — Set `NEXT_PUBLIC_APP_URL` and `AUTH_URL` to your **Production** domain (Vercel → Project → Settings → Domains). Re-register the webhook (GET endpoint below).
+2. **Disable protection** — Vercel → Project → Settings → **Deployment Protection** → turn off for Production (or Previews if you must use a preview URL).
+3. **Automation bypass** — Copy **Protection Bypass for Automation** from Deployment Protection → add `VERCEL_PROTECTION_BYPASS` on Vercel → re-run webhook registration (the app appends it to the webhook URL automatically). For GitHub Actions cron, set `APP_URL` to `https://your-domain.vercel.app?x-vercel-protection-bypass=<token>`.
+
+After fixing, run `getWebhookInfo` again — `last_error_message` should be empty and `pending_update_count` should drop to 0.
+
 ## PWA
 
 The app ships with `manifest.ts` and an icon — use **Add to Home Screen** on mobile. No offline cache in V1; a network connection is required to check in.

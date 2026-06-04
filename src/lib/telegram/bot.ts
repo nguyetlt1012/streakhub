@@ -1,6 +1,6 @@
 const TELEGRAM_API = "https://api.telegram.org";
 
-function getBotToken(): string | null {
+export function getBotToken(): string | null {
   return process.env.TELEGRAM_BOT_TOKEN ?? null;
 }
 
@@ -9,7 +9,21 @@ export function isTelegramConfigured(): boolean {
 }
 
 export function getBotUsername(): string | null {
-  return process.env.TELEGRAM_BOT_USERNAME ?? null;
+  const raw = process.env.TELEGRAM_BOT_USERNAME;
+  if (!raw) {
+    return null;
+  }
+  return raw.replace(/^@/, "");
+}
+
+/** Webhook URL; appends Vercel deployment-protection bypass when configured. */
+export function buildTelegramWebhookUrl(origin: string): string {
+  const base = `${origin.replace(/\/$/, "")}/api/telegram/webhook`;
+  const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+  if (!bypass) {
+    return base;
+  }
+  return `${base}?x-vercel-protection-bypass=${encodeURIComponent(bypass)}`;
 }
 
 export async function sendTelegramMessage(
