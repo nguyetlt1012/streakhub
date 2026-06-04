@@ -1,0 +1,20 @@
+# Hourly miss-day processing (freeze / reset).
+# Required on Vercel Hobby — see README "Cron jobs".
+#
+# Secrets: CRON_SECRET, APP_URL (https://your-app.vercel.app)
+
+name: Cron — miss days
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/cron/miss-days
+        run: |
+          curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/miss-days"

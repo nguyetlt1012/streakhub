@@ -84,7 +84,7 @@ Each streak has its own **IANA timezone** (e.g. `Asia/Ho_Chi_Minh`).
 
 ### Missed days & freeze
 
-Cron `/api/cron/miss-days` runs **every hour**:
+Cron `/api/cron/miss-days` runs **every hour** (GitHub Actions on Hobby; see [Cron jobs](#cron-jobs-vercel-hobby-vs-pro)):
 
 1. For each streak, process past days (through yesterday in the streak TZ) without a check-in.
 2. **Freeze quota left** → use 1 freeze; streak is **not** reset.
@@ -94,10 +94,37 @@ Cron `/api/cron/miss-days` runs **every hour**:
 
 ### Telegram reminders
 
-Cron `/api/cron/telegram-reminders` runs **every 15 minutes**:
+Cron `/api/cron/telegram-reminders` runs **every 15 minutes** (via GitHub Actions on Hobby — see below):
 
 - Sends a reminder when within `reminder_time` (±15 min) and not checked in today.
 - At most 1 reminder per streak per day (`last_reminder_sent_on`).
+
+## Cron jobs (Vercel Hobby vs Pro)
+
+| Job | Ideal schedule | Vercel Pro | Vercel Hobby |
+|-----|----------------|------------|--------------|
+| Miss days | Every hour | `vercel.json` (optional) | Daily backup in `vercel.json` |
+| Telegram reminders | Every 15 min | `vercel.json` | Not supported |
+
+**Vercel Hobby** only allows cron expressions that run **once per day**. This repo uses:
+
+- **`vercel.json`**: miss-days once daily at `0 0 * * *` (UTC) — enough for a safety net; alerts on freeze/reset still fire when this runs.
+- **GitHub Actions** (recommended on Hobby): hourly miss-days + 15-min reminders.
+
+### GitHub Actions setup
+
+Repo → **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|--------|-------|
+| `CRON_SECRET` | Same as Vercel env |
+| `APP_URL` | Production URL, no trailing slash (e.g. `https://streakhub.vercel.app`) |
+
+Workflows: `.github/workflows/cron-miss-days.yml`, `cron-telegram-reminders.yml`.
+
+Manual test: **Actions** tab → run workflow → **Run workflow**.
+
+**Vercel Pro**: you may add hourly / 15-min crons back to `vercel.json` and disable GitHub workflows if you prefer.
 
 ## Telegram bot
 
@@ -143,7 +170,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/tele
 
 1. Import the repo into Vercel
 2. Add environment variables (table above)
-3. Cron is configured in `vercel.json` — requires a plan that supports Cron
+3. **Hobby**: `vercel.json` uses a daily cron only — enable [GitHub Actions cron](#github-actions-setup) for hourly miss-days and Telegram reminders
 4. Run migrations: `npm run db:migrate` (locally with prod `DATABASE_URL`, or via CI)
 5. Set the Telegram webhook (section above)
 
