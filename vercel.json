@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/miss-days",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/telegram-reminders",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

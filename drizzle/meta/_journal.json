@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1780598492831,
+      "tag": "0000_white_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780601170865,
+      "tag": "0001_soft_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780601545300,
+      "tag": "0002_fine_dragon_man",
+      "breakpoints": true
+    }
+  ]
+}
