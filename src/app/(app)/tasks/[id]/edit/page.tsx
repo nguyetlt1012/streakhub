@@ -24,7 +24,7 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 justify-center p-6">
+    <main className="flex min-h-screen flex-col px-5 pb-32 pt-10">
       <TaskEditForm task={task} taskStreaks={taskStreaks} />
     </main>
   );

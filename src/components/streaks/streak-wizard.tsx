@@ -1,22 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { useActionState, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { AppIcon } from "@/components/icons/app-icon";
+import { IconPresetPicker } from "@/components/streaks/icon-preset-picker";
 import { StreakIcon } from "@/components/streaks/streak-icon";
+import { TimePicker, detectUserTimezone } from "@/components/ui/time-picker";
 import {
-  COMMON_TIMEZONES,
   PROOF_MODE_OPTIONS,
   STREAK_ICON_PRESETS,
   type ProofMode,
@@ -32,7 +22,6 @@ const initialState: StreakActionState = {};
 
 export type StreakWizardInitialValues = {
   name: string;
-  timezone: string;
   reminderTime: string;
   iconType: "preset" | "upload";
   iconPreset: string;
@@ -48,14 +37,6 @@ type StreakWizardProps = {
   avatarUploadEnabled: boolean;
 };
 
-function detectTimezone() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return "UTC";
-  }
-}
-
 export function StreakWizard({
   mode,
   streakId,
@@ -69,9 +50,7 @@ export function StreakWizard({
   const [step, setStep] = useState(1);
 
   const [name, setName] = useState(initialValues?.name ?? "");
-  const [timezone, setTimezone] = useState(
-    initialValues?.timezone ?? detectTimezone(),
-  );
+  const [timezone, setTimezone] = useState(() => detectUserTimezone());
   const [reminderTime, setReminderTime] = useState(
     initialValues?.reminderTime ?? "09:00",
   );
@@ -96,6 +75,10 @@ export function StreakWizard({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
+    setTimezone(detectUserTimezone());
+  }, []);
+
+  useEffect(() => {
     if (!avatarFile) {
       return;
     }
@@ -104,18 +87,9 @@ export function StreakWizard({
     return () => URL.revokeObjectURL(url);
   }, [avatarFile]);
 
-  const timezoneOptions = useMemo(() => {
-    const set = new Set<string>(COMMON_TIMEZONES);
-    if (timezone) {
-      set.add(timezone);
-    }
-    return Array.from(set).sort();
-  }, [timezone]);
-
   function validateStep(current: number): string | null {
     if (current === 1) {
       if (!name.trim()) return "Name is required.";
-      if (!timezone) return "Timezone is required.";
       if (!reminderTime) return "Reminder time is required.";
       if (iconType === "preset" && !iconPreset) return "Select an icon.";
       if (iconType === "upload" && !avatarUploadEnabled) {
@@ -148,8 +122,6 @@ export function StreakWizard({
       return;
     }
     setStepError(null);
-    // Defer step change so the same click cannot hit the submit button
-    // that replaces "Next" in the same screen position (step 3 → 4).
     window.setTimeout(() => {
       setStep((s) => Math.min(s + 1, totalSteps));
     }, 0);
@@ -189,32 +161,40 @@ export function StreakWizard({
     ...(mode === "create" ? ["Starting streak"] : []),
   ];
 
+  const backHref =
+    mode === "edit" && streakId ? `/streaks/${streakId}` : "/streaks";
+
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle>{mode === "create" ? "New streak" : "Edit streak"}</CardTitle>
-        <CardDescription>
+    <div className="w-full">
+      <Link
+        href={backHref}
+        className="mb-6 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <AppIcon name="left" className="text-sm" />
+        {mode === "edit" ? "Protocol" : "Back"}
+      </Link>
+
+      <header className="mb-8">
+        <h1 className="font-heading text-3xl uppercase tracking-wider text-foreground">
+          {mode === "create" ? "New Protocol" : "Edit Protocol"}
+        </h1>
+        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Step {step} of {totalSteps} — {stepTitles[step - 1]}
-        </CardDescription>
-        <div className="flex gap-1 pt-2">
-          {stepTitles.map((_, index) => (
+        </p>
+        <div className="mt-4 flex gap-1">
+          {stepTitles.map((title, index) => (
             <div
-              key={stepTitles[index]}
+              key={title}
               className={cn(
                 "h-1 flex-1 rounded-full",
-                index + 1 <= step ? "bg-primary" : "bg-muted",
+                index + 1 <= step ? "bg-primary" : "bg-secondary",
               )}
             />
           ))}
         </div>
-      </CardHeader>
+      </header>
 
-      <form
-        ref={formRef}
-        action={formAction}
-        encType="multipart/form-data"
-        onSubmit={handleFormSubmit}
-      >
+      <form ref={formRef} action={formAction} onSubmit={handleFormSubmit}>
         {mode === "edit" && streakId ? (
           <input type="hidden" name="streakId" value={streakId} />
         ) : null}
@@ -234,227 +214,235 @@ export function StreakWizard({
           />
         ) : null}
 
-        <CardContent className="space-y-6">
-          {(state.error || stepError) && (
-            <p className="text-sm text-destructive" role="alert">
-              {stepError ?? state.error}
+        {(state.error || stepError) && (
+          <p className="mb-6 text-sm text-destructive" role="alert">
+            {stepError ?? state.error}
+          </p>
+        )}
+
+        <div className={step === 1 ? "space-y-6" : "hidden"}>
+          <div className="space-y-2">
+            <label
+              htmlFor="name"
+              className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+            >
+              Name
+            </label>
+            <input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="DAILY READING"
+              className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm font-bold uppercase tracking-widest outline-none transition-colors focus:border-primary"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="reminderTime"
+              className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+            >
+              Daily reminder
+            </label>
+            <TimePicker
+              id="reminderTime"
+              value={reminderTime}
+              onChange={setReminderTime}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Icon
             </p>
-          )}
-
-          <div className={step === 1 ? "space-y-4" : "hidden"}>
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Daily reading"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <select
-                  id="timezone"
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-                >
-                  {timezoneOptions.map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Streak days reset at midnight in this timezone.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reminderTime">Daily reminder</Label>
-                <Input
-                  id="reminderTime"
-                  type="time"
-                  value={reminderTime}
-                  onChange={(e) => setReminderTime(e.target.value)}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <Label>Icon</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={iconType === "preset" ? "default" : "outline"}
-                    onClick={() => setIconType("preset")}
-                  >
-                    Preset
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={iconType === "upload" ? "default" : "outline"}
-                    onClick={() => setIconType("upload")}
-                    disabled={!avatarUploadEnabled}
-                  >
-                    Upload
-                  </Button>
-                </div>
-                {!avatarUploadEnabled ? (
-                  <p className="text-xs text-muted-foreground">
-                    Configure R2 storage to enable avatar uploads.
-                  </p>
-                ) : null}
-
-                {iconType === "preset" ? (
-                  <div className="grid grid-cols-5 gap-2">
-                    {STREAK_ICON_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => setIconPreset(preset.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-colors",
-                          iconPreset === preset.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:bg-muted",
-                        )}
-                        title={preset.label}
-                      >
-                        <preset.Icon className="size-5" />
-                        <span className="truncate w-full text-center">{preset.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <Input
-                      type="file"
-                      name="avatar"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={(e) =>
-                        setAvatarFile(e.target.files?.[0] ?? null)
-                      }
-                    />
-                    {avatarPreview ? (
-                      <StreakIcon
-                        iconType="upload"
-                        avatarUrl={avatarPreview}
-                        size="lg"
-                      />
-                    ) : null}
-                  </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIconType("preset")}
+                className={cn(
+                  "rounded-md px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95",
+                  iconType === "preset"
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-secondary text-secondary-foreground",
                 )}
-              </div>
-          </div>
+              >
+                Preset
+              </button>
+              <button
+                type="button"
+                onClick={() => setIconType("upload")}
+                disabled={!avatarUploadEnabled}
+                className={cn(
+                  "rounded-md px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40",
+                  iconType === "upload"
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-secondary text-secondary-foreground",
+                )}
+              >
+                Upload
+              </button>
+            </div>
 
-          <div className={step === 2 ? "space-y-4" : "hidden"}>
-            <div className="space-y-2">
-              <Label htmlFor="freezePerMonth">Freezes per month</Label>
-              <Input
-                id="freezePerMonth"
-                type="number"
-                min={0}
-                value={freezePerMonth}
-                onChange={(e) => setFreezePerMonth(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                When you miss a day, one freeze is used automatically if you
-                have quota left — your streak won&apos;t reset. Quota resets at
-                the start of each month in your streak timezone.
+            {!avatarUploadEnabled ? (
+              <p className="text-xs text-muted-foreground">
+                Configure R2 storage to enable avatar uploads.
               </p>
-            </div>
-          </div>
+            ) : null}
 
-          <div className={step === 3 ? "space-y-3" : "hidden"}>
-            <p className="text-sm text-muted-foreground">
-              How will you prove you completed today&apos;s habit?
-            </p>
-            <div className="space-y-2">
-              {PROOF_MODE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setProofMode(option.value)}
-                  className={cn(
-                    "w-full rounded-xl border p-4 text-left transition-colors",
-                    proofMode === option.value
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-muted/50",
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{option.label}</span>
-                    <div className="flex flex-wrap gap-1">
-                      {option.suggestedFor.map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {option.description}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {mode === "create" ? (
-            <div className={step === 4 ? "space-y-4" : "hidden"}>
-              <div className="space-y-2">
-                <Label htmlFor="initialStreak">Initial streak (optional)</Label>
-                <Input
-                  id="initialStreak"
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={initialStreak}
-                  onChange={(e) => setInitialStreak(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Sets your displayed streak count only — no past check-ins are
-                  created. You still need to check in today to keep going.
+            {iconType === "preset" ? (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Arrow keys to move, Enter to select.
                 </p>
+                <IconPresetPicker value={iconPreset} onChange={setIconPreset} />
+              </>
+            ) : (
+              <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+                <input
+                  type="file"
+                  name="avatar"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-widest"
+                />
+                {avatarPreview ? (
+                  <StreakIcon
+                    iconType="upload"
+                    avatarUrl={avatarPreview}
+                    size="lg"
+                    className="rounded-md border border-border bg-background"
+                  />
+                ) : null}
               </div>
-              {Number.parseInt(initialStreak, 10) > 0 ? (
-                <Badge variant="secondary">
-                  Will show &quot;Started at {initialStreak}&quot; badge
-                </Badge>
-              ) : null}
-            </div>
-          ) : null}
-        </CardContent>
+            )}
+          </div>
+        </div>
 
-        <CardFooter className="flex justify-between gap-2">
-          <Button
+        <div className={step === 2 ? "space-y-4" : "hidden"}>
+          <label
+            htmlFor="freezePerMonth"
+            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+          >
+            Freezes per month
+          </label>
+          <input
+            id="freezePerMonth"
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={freezePerMonth}
+            onChange={(e) => setFreezePerMonth(e.target.value)}
+            className="w-full rounded-md border border-border bg-input px-4 py-3 text-lg font-heading outline-none focus:border-primary"
+          />
+          <p className="text-sm text-muted-foreground">
+            When you miss a day, one freeze is used automatically if you have
+            quota left — your streak won&apos;t reset. Quota resets at the start
+            of each month in your local timezone.
+          </p>
+        </div>
+
+        <div className={step === 3 ? "space-y-4" : "hidden"}>
+          <p className="text-sm text-muted-foreground">
+            How will you prove you completed today&apos;s habit?
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Proof mode"
+            className="space-y-3"
+          >
+            {PROOF_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={proofMode === option.value}
+                onClick={() => setProofMode(option.value)}
+                className={cn(
+                  "w-full rounded-lg border p-4 text-left transition-all active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  proofMode === option.value
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-card hover:border-primary/30",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold uppercase tracking-wide">
+                    {option.label}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {option.suggestedFor[0]}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {option.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {mode === "create" ? (
+          <div className={step === 4 ? "space-y-4" : "hidden"}>
+            <label
+              htmlFor="initialStreak"
+              className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+            >
+              Initial streak (optional)
+            </label>
+            <input
+              id="initialStreak"
+              type="number"
+              min={0}
+              inputMode="numeric"
+              placeholder="0"
+              value={initialStreak}
+              onChange={(e) => setInitialStreak(e.target.value)}
+              className="w-full rounded-md border border-border bg-input px-4 py-3 text-lg font-heading outline-none focus:border-primary"
+            />
+            <p className="text-sm text-muted-foreground">
+              Sets your displayed streak count only — no past check-ins are
+              created. You still need to check in today to keep going.
+            </p>
+            {Number.parseInt(initialStreak, 10) > 0 ? (
+              <span className="inline-block rounded border border-border bg-secondary px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-secondary-foreground">
+                Will show &quot;Started at {initialStreak}&quot;
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-10 flex gap-3">
+          <button
             type="button"
-            variant="outline"
             onClick={goBack}
             disabled={step === 1 || pending}
+            className="flex-1 rounded-md border border-border bg-secondary py-3 text-xs font-bold uppercase tracking-widest text-secondary-foreground transition-all active:scale-95 disabled:opacity-40"
           >
             Back
-          </Button>
+          </button>
           {step < totalSteps ? (
-            <Button type="button" onClick={goNext}>
+            <button
+              type="button"
+              onClick={goNext}
+              className="flex-1 rounded-md bg-primary py-3 text-xs font-bold uppercase tracking-widest text-primary-foreground transition-all active:scale-95"
+            >
               Next
-            </Button>
+            </button>
           ) : (
-            <Button type="button" disabled={pending} onClick={handleFinalSubmit}>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={handleFinalSubmit}
+              className="flex-1 rounded-md bg-primary py-3 text-xs font-bold uppercase tracking-widest text-primary-foreground transition-all active:scale-95 disabled:opacity-60"
+            >
               {pending
                 ? "Saving..."
                 : mode === "create"
-                  ? "Create streak"
+                  ? "Create protocol"
                   : "Save changes"}
-            </Button>
+            </button>
           )}
-        </CardFooter>
+        </div>
       </form>
-    </Card>
+    </div>
   );
 }

@@ -2,18 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { AppIcon } from "@/components/icons/app-icon";
+import { ProtocolCheckButton } from "@/components/dashboard/protocol-check-button";
 import { TaskCheckInPanel } from "@/components/tasks/task-check-in-panel";
+import { cn } from "@/lib/utils";
 import type { streaks } from "@/lib/db/schema/streaks";
 import type { tasks } from "@/lib/db/schema/tasks";
 import {
@@ -60,49 +52,88 @@ export function CheckInForm({
 
   if (checkedInToday) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Today</CardTitle>
-          <CardDescription>You checked in for today.</CardDescription>
-        </CardHeader>
-      </Card>
+      <section className="mb-10">
+        <h2 className="mb-4 font-heading text-xl uppercase tracking-wider text-foreground">
+          Today
+        </h2>
+        <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-card p-4 opacity-90 shadow-sm">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+              Completed Today
+            </span>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You checked in for today.
+            </p>
+          </div>
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border border-primary bg-primary">
+            <AppIcon name="check" className="text-3xl text-primary-foreground" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (streak.proofMode === "none") {
+    return (
+      <section className="mb-10">
+        <h2 className="mb-4 font-heading text-xl uppercase tracking-wider text-foreground">
+          Check In
+        </h2>
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div>
+            <p className="font-bold uppercase tracking-wide text-foreground">
+              Stamp your day
+            </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Mark today as done
+            </p>
+          </div>
+          <ProtocolCheckButton
+            streakId={streak.id}
+            proofMode="none"
+            checkedInToday={false}
+          />
+        </div>
+      </section>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Check in for today</CardTitle>
-        <CardDescription>
-          {streak.proofMode === "none" && "Mark today as done."}
+    <section className="mb-10">
+      <h2 className="mb-4 font-heading text-xl uppercase tracking-wider text-foreground">
+        Check In
+      </h2>
+      <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {streak.proofMode === "text" &&
-            `Write at least ${streak.textMinLength} characters.`}
-          {streak.proofMode === "photo" && "Upload a proof photo."}
-        </CardDescription>
-      </CardHeader>
-      <form action={formAction} encType="multipart/form-data">
-        <input type="hidden" name="streakId" value={streak.id} />
-        <CardContent className="space-y-4">
+            `Write at least ${streak.textMinLength} characters`}
+          {streak.proofMode === "photo" && "Upload a proof photo"}
+        </p>
+
+        <form action={formAction} className="space-y-4">
+          <input type="hidden" name="streakId" value={streak.id} />
+
           {state.error ? (
             <p className="text-sm text-destructive" role="alert">
               {state.error}
             </p>
           ) : null}
           {state.success ? (
-            <p className="text-sm text-primary">Checked in!</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-primary">
+              Checked in!
+            </p>
           ) : null}
 
           {streak.proofMode === "text" ? (
-            <div className="space-y-2">
-              <Label htmlFor={`text-${streak.id}`}>Note</Label>
-              <Textarea
-                id={`text-${streak.id}`}
-                name="textContent"
-                minLength={streak.textMinLength}
-                placeholder="What did you do today?"
-                required
-              />
-            </div>
+            <textarea
+              id={`text-${streak.id}`}
+              name="textContent"
+              minLength={streak.textMinLength}
+              placeholder="WHAT DID YOU DO TODAY?"
+              required
+              rows={4}
+              className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm font-medium outline-none transition-colors focus:border-primary"
+            />
           ) : null}
 
           {streak.proofMode === "photo" ? (
@@ -114,23 +145,33 @@ export function CheckInForm({
               ) : (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor={`photo-${streak.id}`}>Photo</Label>
-                    <Input
+                    <label
+                      htmlFor={`photo-${streak.id}`}
+                      className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+                    >
+                      Photo
+                    </label>
+                    <input
                       id={`photo-${streak.id}`}
                       name="photo"
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
                       required
+                      className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-bold file:uppercase file:tracking-widest"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`caption-${streak.id}`}>
+                    <label
+                      htmlFor={`caption-${streak.id}`}
+                      className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+                    >
                       Caption (optional)
-                    </Label>
-                    <Input
+                    </label>
+                    <input
                       id={`caption-${streak.id}`}
                       name="caption"
                       placeholder="Optional caption"
+                      className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm outline-none focus:border-primary"
                     />
                   </div>
                 </>
@@ -138,17 +179,19 @@ export function CheckInForm({
             </>
           ) : null}
 
-          <Button
+          <button
             type="submit"
             disabled={
-              pending ||
-              (streak.proofMode === "photo" && !photoUploadEnabled)
+              pending || (streak.proofMode === "photo" && !photoUploadEnabled)
             }
+            className={cn(
+              "w-full rounded-md bg-primary py-3 text-xs font-bold uppercase tracking-widest text-primary-foreground transition-all active:scale-95 disabled:opacity-60",
+            )}
           >
             {pending ? "Saving..." : "Check in"}
-          </Button>
-        </CardContent>
-      </form>
-    </Card>
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }

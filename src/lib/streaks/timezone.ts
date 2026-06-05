@@ -27,6 +27,10 @@ export function formatReminderTimeForInput(dbTime: string): string {
   return dbTime.slice(0, 5);
 }
 
+export function formatTimeInTimezone(timezone: string, date: Date): string {
+  return formatInTimeZone(date, timezone, "HH:mm");
+}
+
 export function shiftCalendarDate(dateStr: string, days: number): string {
   return format(addDays(parseISO(dateStr), days), "yyyy-MM-dd");
 }

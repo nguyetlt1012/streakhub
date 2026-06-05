@@ -1,20 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { CompleteTaskButton } from "@/components/tasks/complete-task-button";
 import { DeleteTaskButton } from "@/components/tasks/delete-task-button";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  TaskStreakSelector,
+  mapTaskStreakOptions,
+} from "@/components/tasks/task-streak-selector";
 import type { streaks } from "@/lib/db/schema/streaks";
 import {
   createTaskAction,
@@ -38,52 +31,78 @@ export function TaskCreateForm({
     createTaskAction,
     initialState,
   );
+  const [streakId, setStreakId] = useState(defaultStreakId ?? "");
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>New task</CardTitle>
-        <CardDescription>
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-heading text-xl uppercase tracking-wider text-foreground">
+          New Task
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
           Link to a task-proof streak to check in when you complete it.
-        </CardDescription>
-      </CardHeader>
-      <form action={formAction}>
-        <CardContent className="space-y-4">
-          {state.error ? (
-            <p className="text-sm text-destructive" role="alert">
-              {state.error}
-            </p>
-          ) : null}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required placeholder="Read 10 pages" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
-            <Textarea id="description" name="description" rows={2} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="streakId">Streak (optional)</Label>
-            <select
-              id="streakId"
-              name="streakId"
-              defaultValue={defaultStreakId ?? ""}
-              className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              <option value="">No streak</option>
-              {taskStreaks.map((streak) => (
-                <option key={streak.id} value={streak.id}>
-                  {streak.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Button type="submit" disabled={pending}>
-            {pending ? "Creating..." : "Create task"}
-          </Button>
-        </CardContent>
+        </p>
+      </div>
+
+      <form action={formAction} className="space-y-4 rounded-lg border border-border bg-card p-4">
+        {state.error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {state.error}
+          </p>
+        ) : null}
+
+        <div className="space-y-2">
+          <label
+            htmlFor="title"
+            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+          >
+            Title
+          </label>
+          <input
+            id="title"
+            name="title"
+            required
+            placeholder="READ 10 PAGES"
+            className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm font-bold uppercase tracking-widest outline-none focus:border-primary"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="description"
+            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+          >
+            Description (optional)
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows={2}
+            placeholder="Add notes..."
+            className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Streak link (optional)
+          </p>
+          <TaskStreakSelector
+            value={streakId}
+            onChange={setStreakId}
+            streaks={mapTaskStreakOptions(taskStreaks)}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full rounded-md bg-primary py-3 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-95 disabled:opacity-60"
+        >
+          {pending ? "Creating..." : "Create task"}
+        </button>
       </form>
-    </Card>
+    </div>
   );
 }
 

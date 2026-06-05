@@ -82,6 +82,11 @@ export async function createTaskAction(
   }
   revalidatePath("/dashboard");
 
+  const redirectTo = (formData.get("redirectTo") as string | null)?.trim();
+  if (redirectTo === "dashboard" || redirectTo === "none") {
+    return { success: true };
+  }
+
   redirect("/tasks");
 }
 

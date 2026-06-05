@@ -29,10 +29,10 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
+    <main className="flex min-h-screen flex-col gap-6 px-5 pb-32 pt-10">
       <div>
-        <h1 className="text-2xl font-semibold">Tasks</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-heading text-2xl uppercase tracking-wider">Tasks</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Complete linked tasks to check in on task-proof streaks.
         </p>
       </div>

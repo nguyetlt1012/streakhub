@@ -1,16 +1,31 @@
 import {
+  Apple,
+  Bed,
   BookOpen,
   Brain,
   Calculator,
   Code2,
+  Coffee,
+  Droplets,
   Dumbbell,
-  FlaskConical,
+  Flame,
+  Footprints,
+  Heart,
   Languages,
+  Moon,
   Music,
   Palette,
   PenLine,
+  Smartphone,
+  Sparkles,
+  Sun,
+  Target,
+  Timer,
+  FlaskConical,
   type LucideIcon,
+  Zap,
 } from "lucide-react";
+
 export type ProofMode = "task" | "photo" | "text" | "none";
 
 export type StreakIconPreset = {
@@ -25,16 +40,32 @@ export const STREAK_ICON_PRESETS: StreakIconPreset[] = [
   { id: "code-2", label: "Code", Icon: Code2 },
   { id: "calculator", label: "Math", Icon: Calculator },
   { id: "dumbbell", label: "Fitness", Icon: Dumbbell },
+  { id: "footprints", label: "Walk", Icon: Footprints },
+  { id: "flame", label: "Streak", Icon: Flame },
   { id: "brain", label: "Learning", Icon: Brain },
   { id: "pen-line", label: "Writing", Icon: PenLine },
   { id: "flask-conical", label: "Science", Icon: FlaskConical },
   { id: "music", label: "Music", Icon: Music },
   { id: "palette", label: "Art", Icon: Palette },
+  { id: "moon", label: "Sleep", Icon: Moon },
+  { id: "bed", label: "Rest", Icon: Bed },
+  { id: "sun", label: "Morning", Icon: Sun },
+  { id: "coffee", label: "Coffee", Icon: Coffee },
+  { id: "droplets", label: "Water", Icon: Droplets },
+  { id: "apple", label: "Nutrition", Icon: Apple },
+  { id: "heart", label: "Health", Icon: Heart },
+  { id: "target", label: "Goals", Icon: Target },
+  { id: "timer", label: "Focus", Icon: Timer },
+  { id: "zap", label: "Energy", Icon: Zap },
+  { id: "smartphone", label: "Screen", Icon: Smartphone },
+  { id: "sparkles", label: "Mindful", Icon: Sparkles },
 ];
 
 export const ICON_PRESET_MAP = Object.fromEntries(
   STREAK_ICON_PRESETS.map((preset) => [preset.id, preset]),
 ) as Record<string, StreakIconPreset>;
+
+export const ICON_PRESET_COLUMNS = 4;
 
 export type ProofModeOption = {
   value: ProofMode;

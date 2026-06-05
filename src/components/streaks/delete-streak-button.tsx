@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
 import { deleteStreakAction } from "@/server/actions/streaks";
 
 type DeleteStreakButtonProps = {
@@ -38,20 +37,20 @@ export function DeleteStreakButton({
   }
 
   return (
-    <div className="space-y-2">
-      <Button
+    <section className="border-t border-border pt-8">
+      <button
         type="button"
-        variant="destructive"
         onClick={handleDelete}
         disabled={pending}
+        className="w-full rounded-md border border-destructive/30 bg-destructive/10 py-3 text-xs font-bold uppercase tracking-widest text-destructive transition-all active:scale-95 disabled:opacity-60"
       >
         {pending ? "Deleting..." : "Delete streak"}
-      </Button>
+      </button>
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="mt-2 text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
-    </div>
+    </section>
   );
 }

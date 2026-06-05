@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
 import { deleteTaskAction } from "@/server/actions/tasks";
 
 type DeleteTaskButtonProps = {
@@ -32,16 +31,19 @@ export function DeleteTaskButton({ taskId, taskTitle }: DeleteTaskButtonProps) {
 
   return (
     <div>
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="sm"
         onClick={handleDelete}
         disabled={pending}
+        className="w-full rounded-md border border-destructive/30 bg-destructive/10 py-3 text-xs font-bold uppercase tracking-widest text-destructive transition-all active:scale-95 disabled:opacity-60"
       >
-        Delete
-      </Button>
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+        {pending ? "Deleting..." : "Delete task"}
+      </button>
+      {error ? (
+        <p className="mt-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

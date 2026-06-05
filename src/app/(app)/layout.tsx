@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { AppHeader } from "@/components/layout/app-header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 export default async function AppLayout({
   children,
@@ -14,9 +14,9 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <AppHeader />
+    <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
       {children}
+      <BottomNav />
     </div>
   );
 }

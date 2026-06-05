@@ -3,7 +3,7 @@ import { isAvatarUploadConfigured } from "@/lib/storage/r2";
 
 export default function NewStreakPage() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 justify-center p-6">
+    <main className="flex min-h-screen flex-col px-5 pb-32 pt-10">
       <StreakWizard mode="create" avatarUploadEnabled={isAvatarUploadConfigured()} />
     </main>
   );
