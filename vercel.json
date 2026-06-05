@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/miss-days",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
