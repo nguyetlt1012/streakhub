@@ -13,14 +13,14 @@ const initialState: TaskActionState = {};
 
 type CompleteTaskButtonProps = {
   taskId: string;
-  label?: string;
-  variant?: "default" | "stamp";
+  taskTitle?: string;
+  variant?: "icon" | "stamp" | "text";
 };
 
 export function CompleteTaskButton({
   taskId,
-  label = "Complete",
-  variant = "default",
+  taskTitle,
+  variant = "icon",
 }: CompleteTaskButtonProps) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(
@@ -34,6 +34,8 @@ export function CompleteTaskButton({
     }
   }, [state.success, router]);
 
+  const ariaLabel = taskTitle ? `Complete ${taskTitle}` : "Complete task";
+
   if (variant === "stamp") {
     return (
       <form action={formAction} className="shrink-0">
@@ -42,7 +44,7 @@ export function CompleteTaskButton({
           type="submit"
           disabled={pending}
           className="group flex h-16 w-16 items-center justify-center rounded-md border border-border bg-secondary transition-all active:scale-95 hover:bg-secondary/80 disabled:opacity-60"
-          aria-label={`Complete task`}
+          aria-label={ariaLabel}
         >
           <AppIcon
             name="check"
@@ -56,20 +58,41 @@ export function CompleteTaskButton({
     );
   }
 
+  if (variant === "text") {
+    return (
+      <form action={formAction} className="inline">
+        <input type="hidden" name="taskId" value={taskId} />
+        <button
+          type="submit"
+          disabled={pending}
+          className={cn(
+            "rounded-md bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-95 disabled:opacity-60",
+          )}
+        >
+          {pending ? "..." : "Complete"}
+        </button>
+        {state.error ? (
+          <p className="mt-1 text-xs text-destructive">{state.error}</p>
+        ) : null}
+      </form>
+    );
+  }
+
   return (
-    <form action={formAction} className="inline">
+    <form action={formAction} className="shrink-0">
       <input type="hidden" name="taskId" value={taskId} />
       <button
         type="submit"
         disabled={pending}
+        aria-label={ariaLabel}
         className={cn(
-          "rounded-md bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-95 disabled:opacity-60",
+          "flex h-11 w-11 items-center justify-center rounded-md bg-primary text-primary-foreground transition-all active:scale-95 disabled:opacity-60",
         )}
       >
-        {pending ? "..." : label}
+        <AppIcon name="check" className="text-2xl" />
       </button>
       {state.error ? (
-        <p className="mt-1 text-xs text-destructive">{state.error}</p>
+        <p className="absolute mt-1 max-w-32 text-xs text-destructive">{state.error}</p>
       ) : null}
     </form>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProtocolCheckButton } from "@/components/dashboard/protocol-check-button";
 import { StreakIcon } from "@/components/streaks/streak-icon";
+import { getStreakProofModes } from "@/lib/streaks/proof-modes";
 import { cn } from "@/lib/utils";
 import type { streaks } from "@/lib/db/schema/streaks";
 
@@ -69,7 +70,7 @@ export function ProtocolRow({ streak, checkedInToday }: ProtocolRowProps) {
       </Link>
       <ProtocolCheckButton
         streakId={streak.id}
-        proofMode={streak.proofMode}
+        proofModes={getStreakProofModes(streak)}
         checkedInToday={checkedInToday}
       />
     </div>

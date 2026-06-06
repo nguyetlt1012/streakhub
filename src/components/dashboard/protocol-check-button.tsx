@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { AppIcon } from "@/components/icons/app-icon";
 import { cn } from "@/lib/utils";
+import type { ProofMode } from "@/lib/streaks/constants";
+import { canQuickCheckIn } from "@/lib/streaks/proof-modes";
 import {
   checkInAction,
   type CheckInActionState,
@@ -14,13 +16,13 @@ const initialState: CheckInActionState = {};
 
 type ProtocolCheckButtonProps = {
   streakId: string;
-  proofMode: "none" | "text" | "photo" | "task";
+  proofModes: ProofMode[];
   checkedInToday: boolean;
 };
 
 export function ProtocolCheckButton({
   streakId,
-  proofMode,
+  proofModes,
   checkedInToday,
 }: ProtocolCheckButtonProps) {
   const router = useRouter();
@@ -40,7 +42,7 @@ export function ProtocolCheckButton({
     );
   }
 
-  if (proofMode !== "none") {
+  if (!canQuickCheckIn(proofModes)) {
     return (
       <Link
         href={`/streaks/${streakId}`}
@@ -58,6 +60,7 @@ export function ProtocolCheckButton({
   return (
     <form action={formAction} className="shrink-0">
       <input type="hidden" name="streakId" value={streakId} />
+      <input type="hidden" name="proofMode" value="none" />
       <button
         type="submit"
         disabled={pending}

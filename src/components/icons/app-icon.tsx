@@ -15,6 +15,7 @@ const ICONS = {
   user: "mingcute:user-3-line",
   check: "mingcute:check-fill",
   edit: "mingcute:edit-line",
+  delete: "mingcute:delete-2-line",
   search: "mingcute:search-line",
   add: "mingcute:add-fill",
   left: "mingcute:left-line",

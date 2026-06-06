@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { AppIcon } from "@/components/icons/app-icon";
 import { CompleteTaskButton } from "@/components/tasks/complete-task-button";
 import { DeleteTaskButton } from "@/components/tasks/delete-task-button";
 import {
@@ -63,7 +64,7 @@ export function TaskCreateForm({
             name="title"
             required
             placeholder="READ 10 PAGES"
-            className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm font-bold uppercase tracking-widest outline-none focus:border-primary"
+            className="w-full rounded-md border border-border bg-input px-4 py-3 text-base font-bold uppercase tracking-widest outline-none focus:border-primary"
           />
         </div>
 
@@ -79,7 +80,7 @@ export function TaskCreateForm({
             name="description"
             rows={2}
             placeholder="Add notes..."
-            className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm outline-none focus:border-primary"
+            className="w-full rounded-md border border-border bg-input px-4 py-3 text-base outline-none focus:border-primary"
           />
         </div>
 
@@ -156,7 +157,7 @@ function TaskSection({
         {items.map((task) => (
           <li
             key={task.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+            className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
           >
             <div className="min-w-0 flex-1 space-y-1">
               <p
@@ -175,15 +176,16 @@ function TaskSection({
                 </p>
               ) : null}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {!done ? (
                 <>
-                  <CompleteTaskButton taskId={task.id} />
+                  <CompleteTaskButton taskId={task.id} taskTitle={task.title} />
                   <Link
                     href={`/tasks/${task.id}/edit`}
-                    className="text-sm text-primary underline-offset-4 hover:underline"
+                    aria-label={`Edit ${task.title}`}
+                    className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-secondary text-muted-foreground transition-all active:scale-95 hover:text-foreground"
                   >
-                    Edit
+                    <AppIcon name="edit" className="text-xl" />
                   </Link>
                 </>
               ) : null}

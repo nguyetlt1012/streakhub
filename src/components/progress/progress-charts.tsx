@@ -103,6 +103,7 @@ export function DailyVolumeChart({ days }: DailyVolumeProps) {
 }
 
 type Milestone = {
+  id: string;
   threshold: number;
   unlocked: boolean;
   label: string;
@@ -118,7 +119,7 @@ export function MilestonesGrid({ milestones }: { milestones: Milestone[] }) {
       <div className="grid grid-cols-2 gap-4">
         {milestones.map((milestone) => (
           <div
-            key={milestone.threshold}
+            key={milestone.id}
             className={cn(
               "flex items-center gap-4 rounded-lg border border-border bg-card p-4",
               !milestone.unlocked && "opacity-40",

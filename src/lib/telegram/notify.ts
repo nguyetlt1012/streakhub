@@ -40,6 +40,19 @@ export async function sendStreakAlerts(alerts: StreakAlert[]): Promise<number> {
   return sent;
 }
 
+export async function sendMorningBrief(params: {
+  chatId: string;
+  streakNames: string[];
+  appUrl: string;
+}): Promise<boolean> {
+  const lines = params.streakNames.map((name) => `• ${name}`).join("\n");
+  return sendTelegramMessage(
+    params.chatId,
+    `☀️ StreakHub — Today's protocols\n\n${lines}\n\n` +
+      `Open ${params.appUrl} to check in.`,
+  );
+}
+
 export async function sendDailyReminder(params: {
   chatId: string;
   streakName: string;

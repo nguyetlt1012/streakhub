@@ -74,7 +74,8 @@ export function TelegramSettings({
       <CardHeader>
         <CardTitle>Telegram</CardTitle>
         <CardDescription>
-          Get daily reminders and streak alerts. Check-ins stay on the web app.
+          Link Telegram for morning briefs, repeat reminders, and streak alerts.
+          Check-ins stay on the web app.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

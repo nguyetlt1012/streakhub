@@ -11,6 +11,7 @@ import {
   STREAK_ICON_PRESETS,
   type ProofMode,
 } from "@/lib/streaks/constants";
+import { normalizeProofModes } from "@/lib/streaks/proof-modes";
 import { cn } from "@/lib/utils";
 import {
   createStreakAction,
@@ -22,11 +23,13 @@ const initialState: StreakActionState = {};
 
 export type StreakWizardInitialValues = {
   name: string;
+  timezone?: string;
   reminderTime: string;
   iconType: "preset" | "upload";
   iconPreset: string;
-  proofMode: ProofMode;
+  proofModes: ProofMode[];
   freezePerMonth: number;
+  targetStreak?: number | null;
   avatarUrl?: string | null;
 };
 
@@ -50,7 +53,9 @@ export function StreakWizard({
   const [step, setStep] = useState(1);
 
   const [name, setName] = useState(initialValues?.name ?? "");
-  const [timezone, setTimezone] = useState(() => detectUserTimezone());
+  const [timezone, setTimezone] = useState(
+    initialValues?.timezone ?? "UTC",
+  );
   const [reminderTime, setReminderTime] = useState(
     initialValues?.reminderTime ?? "09:00",
   );
@@ -60,13 +65,18 @@ export function StreakWizard({
   const [iconPreset, setIconPreset] = useState(
     initialValues?.iconPreset ?? STREAK_ICON_PRESETS[0].id,
   );
-  const [proofMode, setProofMode] = useState<ProofMode>(
-    initialValues?.proofMode ?? "none",
+  const [proofModes, setProofModes] = useState<ProofMode[]>(
+    initialValues?.proofModes?.length
+      ? initialValues.proofModes
+      : ["none"],
   );
   const [freezePerMonth, setFreezePerMonth] = useState(
     String(initialValues?.freezePerMonth ?? 0),
   );
   const [initialStreak, setInitialStreak] = useState("");
+  const [targetStreak, setTargetStreak] = useState(
+    initialValues?.targetStreak ? String(initialValues.targetStreak) : "",
+  );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     initialValues?.avatarUrl ?? null,
@@ -75,8 +85,10 @@ export function StreakWizard({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    setTimezone(detectUserTimezone());
-  }, []);
+    if (mode === "create" && !initialValues?.timezone) {
+      setTimezone(detectUserTimezone());
+    }
+  }, [mode, initialValues?.timezone]);
 
   useEffect(() => {
     if (!avatarFile) {
@@ -102,17 +114,46 @@ export function StreakWizard({
     if (current === 2) {
       const n = Number.parseInt(freezePerMonth, 10);
       if (Number.isNaN(n) || n < 0) return "Freezes per month must be 0 or more.";
+      if (mode === "edit") {
+        const targetTrimmed = targetStreak.trim();
+        if (targetTrimmed !== "") {
+          const targetN = Number.parseInt(targetTrimmed, 10);
+          if (Number.isNaN(targetN) || targetN < 1) {
+            return "Target streak must be at least 1 day.";
+          }
+        }
+      }
     }
     if (current === 3) {
-      if (!proofMode) return "Select a proof mode.";
+      if (proofModes.length === 0) {
+        return "Select at least one proof option.";
+      }
     }
     if (current === 4 && mode === "create") {
       const trimmed = initialStreak.trim();
-      if (trimmed === "") return null;
-      const n = Number.parseInt(trimmed, 10);
-      if (Number.isNaN(n) || n < 0) return "Initial streak must be 0 or more.";
+      if (trimmed !== "") {
+        const n = Number.parseInt(trimmed, 10);
+        if (Number.isNaN(n) || n < 0) return "Initial streak must be 0 or more.";
+      }
+      const targetTrimmed = targetStreak.trim();
+      if (targetTrimmed !== "") {
+        const targetN = Number.parseInt(targetTrimmed, 10);
+        if (Number.isNaN(targetN) || targetN < 1) {
+          return "Target streak must be at least 1 day.";
+        }
+      }
     }
     return null;
+  }
+
+  function toggleProofMode(mode: ProofMode) {
+    setProofModes((current) => {
+      if (current.includes(mode)) {
+        const next = current.filter((entry) => entry !== mode);
+        return next.length === 0 ? current : normalizeProofModes(next);
+      }
+      return normalizeProofModes([...current, mode]);
+    });
   }
 
   function goNext() {
@@ -158,7 +199,7 @@ export function StreakWizard({
     "Basics",
     "Freezes",
     "Proof",
-    ...(mode === "create" ? ["Starting streak"] : []),
+    ...(mode === "create" ? ["Goals"] : []),
   ];
 
   const backHref =
@@ -204,8 +245,11 @@ export function StreakWizard({
         <input type="hidden" name="reminderTime" value={reminderTime} />
         <input type="hidden" name="iconType" value={iconType} />
         <input type="hidden" name="iconPreset" value={iconPreset} />
-        <input type="hidden" name="proofMode" value={proofMode} />
+        {proofModes.map((mode) => (
+          <input key={mode} type="hidden" name="proofModes" value={mode} />
+        ))}
         <input type="hidden" name="freezePerMonth" value={freezePerMonth} />
+        <input type="hidden" name="targetStreak" value={targetStreak} />
         {mode === "create" ? (
           <input
             type="hidden"
@@ -339,44 +383,77 @@ export function StreakWizard({
             quota left — your streak won&apos;t reset. Quota resets at the start
             of each month in your local timezone.
           </p>
+
+          {mode === "edit" ? (
+            <div className="space-y-2 pt-2">
+              <label
+                htmlFor="targetStreak"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+              >
+                Target streak (optional)
+              </label>
+              <input
+                id="targetStreak"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="e.g. 30"
+                value={targetStreak}
+                onChange={(e) => setTargetStreak(e.target.value)}
+                className="w-full rounded-md border border-border bg-input px-4 py-3 text-lg font-heading outline-none focus:border-primary"
+              />
+              <p className="text-sm text-muted-foreground">
+                Set a day-count goal. When you reach it, a milestone is saved on
+                Progress.
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div className={step === 3 ? "space-y-4" : "hidden"}>
           <p className="text-sm text-muted-foreground">
-            How will you prove you completed today&apos;s habit?
+            Pick one or more ways to prove you completed today&apos;s habit. At
+            check-in you choose which method to use.
           </p>
           <div
-            role="radiogroup"
-            aria-label="Proof mode"
+            role="group"
+            aria-label="Proof options"
             className="space-y-3"
           >
-            {PROOF_MODE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={proofMode === option.value}
-                onClick={() => setProofMode(option.value)}
-                className={cn(
-                  "w-full rounded-lg border p-4 text-left transition-all active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                  proofMode === option.value
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-card hover:border-primary/30",
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-bold uppercase tracking-wide">
-                    {option.label}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {option.suggestedFor[0]}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {option.description}
-                </p>
-              </button>
-            ))}
+            {PROOF_MODE_OPTIONS.map((option) => {
+              const selected = proofModes.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleProofMode(option.value)}
+                  className={cn(
+                    "w-full rounded-lg border p-4 text-left transition-all active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    selected
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-card hover:border-primary/30",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold uppercase tracking-wide">
+                      {option.label}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold uppercase tracking-widest",
+                        selected ? "text-primary" : "text-muted-foreground",
+                      )}
+                    >
+                      {selected ? "Selected" : option.suggestedFor[0]}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {option.description}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -407,6 +484,28 @@ export function StreakWizard({
                 Will show &quot;Started at {initialStreak}&quot;
               </span>
             ) : null}
+
+            <div className="space-y-2 pt-2">
+              <label
+                htmlFor="targetStreakCreate"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+              >
+                Target streak (optional)
+              </label>
+              <input
+                id="targetStreakCreate"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="e.g. 30"
+                value={targetStreak}
+                onChange={(e) => setTargetStreak(e.target.value)}
+                className="w-full rounded-md border border-border bg-input px-4 py-3 text-lg font-heading outline-none focus:border-primary"
+              />
+              <p className="text-sm text-muted-foreground">
+                Hit this day count to unlock a milestone on Progress.
+              </p>
+            </div>
           </div>
         ) : null}
 

@@ -8,6 +8,10 @@ import {
   performStreakCheckIn,
   processMissedDaysForStreak,
 } from "@/lib/streaks/streak-engine";
+import {
+  getStreakProofModes,
+  parseCheckInProofMode,
+} from "@/lib/streaks/proof-modes";
 import { getCalendarDateInTimezone } from "@/lib/streaks/timezone";
 import { isProofUploadConfigured, uploadProofPhoto } from "@/lib/storage/r2";
 
@@ -42,7 +46,15 @@ export async function checkInAction(
     return { error: "Streak not found." };
   }
 
-  if (streak.proofMode === "task") {
+  const allowedProofModes = getStreakProofModes(streak);
+  const proofModeParsed = parseCheckInProofMode(formData, allowedProofModes);
+  if (proofModeParsed.error || !proofModeParsed.mode) {
+    return { error: proofModeParsed.error ?? "Choose how to prove today." };
+  }
+
+  const proofMode = proofModeParsed.mode;
+
+  if (proofMode === "task") {
     return { error: "Complete a linked task to check in." };
   }
 
@@ -50,14 +62,14 @@ export async function checkInAction(
   let caption: string | null = null;
   let textContent: string | null = null;
 
-  if (streak.proofMode === "text") {
+  if (proofMode === "text") {
     textContent = (formData.get("textContent") as string | null)?.trim() ?? "";
     if (textContent.length < streak.textMinLength) {
       return {
         error: `Write at least ${streak.textMinLength} characters.`,
       };
     }
-  } else if (streak.proofMode === "photo") {
+  } else if (proofMode === "photo") {
     if (!isProofUploadConfigured()) {
       return { error: "Photo upload is not configured." };
     }
@@ -80,7 +92,7 @@ export async function checkInAction(
   const result = await performStreakCheckIn({
     userId,
     streakId,
-    proofMode: streak.proofMode,
+    proofMode,
     photoUrl,
     caption,
     textContent,
@@ -93,6 +105,9 @@ export async function checkInAction(
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
   revalidatePath(`/streaks/${streakId}`);
+  if (result.milestoneReached) {
+    revalidatePath("/progress");
+  }
 
   return { success: true };
 }

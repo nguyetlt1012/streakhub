@@ -4,6 +4,7 @@ import { StreakWizard } from "@/components/streaks/streak-wizard";
 import { getStreakForUser } from "@/lib/streaks/queries";
 import { formatReminderTimeForInput } from "@/lib/streaks/timezone";
 import { isAvatarUploadConfigured } from "@/lib/storage/r2";
+import { getStreakProofModes } from "@/lib/streaks/proof-modes";
 import type { ProofMode } from "@/lib/streaks/constants";
 
 type EditStreakPageProps = {
@@ -31,11 +32,13 @@ export default async function EditStreakPage({ params }: EditStreakPageProps) {
         avatarUploadEnabled={isAvatarUploadConfigured()}
         initialValues={{
           name: streak.name,
+          timezone: streak.timezone,
           reminderTime: formatReminderTimeForInput(String(streak.reminderTime)),
           iconType: streak.iconType,
           iconPreset: streak.iconPreset ?? "book-open",
-          proofMode: streak.proofMode as ProofMode,
+          proofModes: getStreakProofModes(streak) as ProofMode[],
           freezePerMonth: streak.freezePerMonth,
+          targetStreak: streak.targetStreak,
           avatarUrl: streak.avatarUrl,
         }}
       />

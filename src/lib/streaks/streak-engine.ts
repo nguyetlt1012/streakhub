@@ -15,6 +15,7 @@ import {
 } from "@/lib/streaks/timezone";
 
 import type { ProcessMissedDaysResult, StreakAlert } from "@/lib/streaks/alerts";
+import { recordTargetMilestoneIfReached } from "@/lib/streaks/milestones";
 
 type StreakRow = typeof streaksTable.$inferSelect;
 
@@ -155,7 +156,7 @@ export async function performStreakCheckIn(params: {
   textContent?: string | null;
   /** When true, skip check-in creation if already checked in today (no error). */
   skipIfAlreadyCheckedIn?: boolean;
-}): Promise<{ checkedIn: boolean; error?: string }> {
+}): Promise<{ checkedIn: boolean; milestoneReached?: boolean; error?: string }> {
   const [streak] = await db
     .select()
     .from(streaks)
@@ -198,9 +199,23 @@ export async function performStreakCheckIn(params: {
     textContent: params.textContent ?? null,
   });
 
-  await applyCheckInStreakUpdate(params.streakId, today);
+  const { currentStreak } = await applyCheckInStreakUpdate(params.streakId, today);
 
-  return { checkedIn: true };
+  const [updatedStreak] = await db
+    .select()
+    .from(streaks)
+    .where(eq(streaks.id, params.streakId))
+    .limit(1);
+
+  const milestoneReached = updatedStreak
+    ? await recordTargetMilestoneIfReached({
+        streak: updatedStreak,
+        currentStreak,
+        achievedOn: today,
+      })
+    : false;
+
+  return { checkedIn: true, milestoneReached };
 }
 
 export async function applyFreezeForDay(

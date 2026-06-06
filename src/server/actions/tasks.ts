@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { getStreakForUser } from "@/lib/streaks/queries";
 import { performStreakCheckIn } from "@/lib/streaks/streak-engine";
+import { streakAllowsProof } from "@/lib/streaks/proof-modes";
 import { getTaskForUser } from "@/lib/tasks/queries";
 
 export type TaskActionState = {
@@ -36,8 +37,8 @@ async function validateStreakLink(
     return { error: "Streak not found." };
   }
 
-  if (streak.proofMode !== "task") {
-    return { error: "Link tasks only to streaks with task proof mode." };
+  if (!streakAllowsProof(streak, "task")) {
+    return { error: "Link tasks only to streaks that allow task proof." };
   }
 
   return null;
@@ -193,7 +194,7 @@ export async function completeTaskAction(
 
   if (task.streakId) {
     const streak = await getStreakForUser(task.streakId, userId);
-    if (streak?.proofMode === "task") {
+    if (streak && streakAllowsProof(streak, "task")) {
       const result = await performStreakCheckIn({
         userId,
         streakId: task.streakId,
@@ -204,6 +205,9 @@ export async function completeTaskAction(
 
       if (result.error) {
         return { error: result.error };
+      }
+      if (result.milestoneReached) {
+        revalidatePath("/progress");
       }
     }
   }

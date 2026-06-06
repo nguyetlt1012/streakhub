@@ -54,6 +54,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${oswald.variable} ${geistMono.variable} h-full antialiased dark`}
+      suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col bg-background">{children}</body>
     </html>

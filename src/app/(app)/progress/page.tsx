@@ -9,7 +9,7 @@ import {
 import {
   getLast7DaysVolume,
   getMonthCalendarData,
-  getUserBestStreakMilestones,
+  getUserMilestones,
   getUserCheckInStats,
   getUserTimezone,
 } from "@/lib/progress/queries";
@@ -27,7 +27,7 @@ export default async function ProgressPage() {
     getUserCheckInStats(session.user.id, timezone),
     getLast7DaysVolume(session.user.id, timezone),
     getMonthCalendarData(session.user.id, timezone, now),
-    getUserBestStreakMilestones(session.user.id),
+    getUserMilestones(session.user.id),
   ]);
 
   return (

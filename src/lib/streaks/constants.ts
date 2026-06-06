@@ -96,7 +96,7 @@ export const PROOF_MODE_OPTIONS: ProofModeOption[] = [
   {
     value: "photo",
     label: "Photo",
-    description: "Upload a photo with an optional caption.",
+    description: "Upload or take a photo with an optional caption.",
     suggestedFor: ["Workout", "Progress shots"],
   },
 ];

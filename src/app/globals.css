@@ -98,6 +98,14 @@
   html {
     @apply font-sans;
   }
+  @media (pointer: coarse) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    textarea,
+    select {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+  }
 }
 
 @utility pb-safe {

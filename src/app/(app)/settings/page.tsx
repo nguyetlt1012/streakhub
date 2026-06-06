@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { ReminderSettings } from "@/components/settings/reminder-settings";
 import { TelegramSettings } from "@/components/settings/telegram-settings";
 import { Button } from "@/components/ui/button";
+import { getReminderSettingsForUser } from "@/server/actions/settings";
 import { getTelegramSettingsForUser } from "@/server/actions/telegram";
 import { logoutAction } from "@/server/actions/auth";
 
@@ -12,6 +14,7 @@ export default async function SettingsPage() {
   }
 
   const telegram = await getTelegramSettingsForUser(session.user.id);
+  const reminders = await getReminderSettingsForUser(session.user.id);
 
   return (
     <main className="min-h-screen pb-32 px-5 pt-10 font-sans selection:bg-primary/30">
@@ -33,6 +36,12 @@ export default async function SettingsPage() {
           <p className="text-sm text-muted-foreground">{session.user.email}</p>
         ) : null}
       </div>
+
+      <ReminderSettings
+        timezone={reminders.timezone}
+        morningBriefTime={reminders.morningBriefTime}
+        reminderIntervalMinutes={reminders.reminderIntervalMinutes}
+      />
 
       <TelegramSettings
         linked={telegram.linked}

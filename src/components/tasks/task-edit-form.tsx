@@ -73,7 +73,7 @@ export function TaskEditForm({ task, taskStreaks }: TaskEditFormProps) {
             required
             defaultValue={task.title}
             placeholder="READ 10 PAGES"
-            className="w-full rounded-md border border-border bg-input px-4 py-3 text-sm font-bold uppercase tracking-widest outline-none transition-colors focus:border-primary"
+            className="w-full rounded-md border border-border bg-input px-4 py-3 text-base font-bold uppercase tracking-widest outline-none transition-colors focus:border-primary"
           />
         </div>
 
@@ -123,7 +123,11 @@ export function TaskEditForm({ task, taskStreaks }: TaskEditFormProps) {
       </form>
 
       <div className="mt-10 border-t border-border pt-8">
-        <DeleteTaskButton taskId={task.id} taskTitle={task.title} />
+        <DeleteTaskButton
+          taskId={task.id}
+          taskTitle={task.title}
+          variant="full"
+        />
       </div>
     </div>
   );

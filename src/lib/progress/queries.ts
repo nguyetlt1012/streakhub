@@ -1,8 +1,8 @@
-import { and, count, eq, gte, lte } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { subDays, parseISO, format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { db } from "@/lib/db";
-import { checkIns, streaks } from "@/lib/db/schema";
+import { checkIns, streakMilestones, streaks } from "@/lib/db/schema";
 import { getCalendarDateInTimezone } from "@/lib/streaks/timezone";
 
 export async function getUserCheckInStats(userId: string, timezone: string) {
@@ -66,7 +66,7 @@ export async function getCheckInsByDateRange(
   return new Map(rows.map((row) => [row.date, Number(row.cnt)]));
 }
 
-export async function getUserBestStreakMilestones(userId: string) {
+export async function getUserMilestones(userId: string) {
   const userStreaks = await db
     .select({ bestStreak: streaks.bestStreak })
     .from(streaks)
@@ -74,20 +74,76 @@ export async function getUserBestStreakMilestones(userId: string) {
 
   const maxBest = Math.max(0, ...userStreaks.map((s) => s.bestStreak));
 
-  return [
+  const globalMilestones = [
     {
+      id: "global-30",
       threshold: 30,
       unlocked: maxBest >= 30,
       label: "Relentless",
       subtitle: "30 DAY RUN",
     },
     {
+      id: "global-100",
       threshold: 100,
       unlocked: maxBest >= 100,
       label: "Overlord",
       subtitle: "100 DAY RUN",
     },
   ];
+
+  const achievedRows = await db
+    .select({
+      id: streakMilestones.id,
+      streakId: streakMilestones.streakId,
+      targetDays: streakMilestones.targetDays,
+      streakName: streaks.name,
+    })
+    .from(streakMilestones)
+    .innerJoin(streaks, eq(streakMilestones.streakId, streaks.id))
+    .where(eq(streakMilestones.userId, userId))
+    .orderBy(desc(streakMilestones.achievedAt));
+
+  const achievedMilestones = achievedRows.map((row) => ({
+    id: row.id,
+    threshold: row.targetDays,
+    unlocked: true,
+    label: row.streakName,
+    subtitle: `${row.targetDays} DAY TARGET`,
+  }));
+
+  const achievedKeys = new Set(
+    achievedRows.map((row) => `${row.streakId}:${row.targetDays}`),
+  );
+
+  const activeTargets = await db
+    .select({
+      id: streaks.id,
+      name: streaks.name,
+      targetStreak: streaks.targetStreak,
+      currentStreak: streaks.currentStreak,
+    })
+    .from(streaks)
+    .where(eq(streaks.userId, userId));
+
+  const pendingMilestones = activeTargets
+    .filter(
+      (streak) =>
+        streak.targetStreak !== null &&
+        streak.targetStreak > 0 &&
+        !achievedKeys.has(`${streak.id}:${streak.targetStreak}`),
+    )
+    .map((streak) => ({
+      id: `pending-${streak.id}-${streak.targetStreak}`,
+      threshold: streak.targetStreak!,
+      unlocked: streak.currentStreak >= streak.targetStreak!,
+      label: streak.name,
+      subtitle:
+        streak.currentStreak >= streak.targetStreak!
+          ? `${streak.targetStreak} DAY TARGET`
+          : `${streak.currentStreak} / ${streak.targetStreak} DAYS`,
+    }));
+
+  return [...globalMilestones, ...achievedMilestones, ...pendingMilestones];
 }
 
 export async function getLast7DaysVolume(userId: string, timezone: string) {

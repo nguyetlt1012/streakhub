@@ -22,6 +22,27 @@
       "when": 1780601545300,
       "tag": "0002_fine_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780741909826,
+      "tag": "0003_fresh_nightcrawler",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780745000000,
+      "tag": "0004_proof_modes_array",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780746000000,
+      "tag": "0005_reminder_settings",
+      "breakpoints": true
     }
   ]
 }

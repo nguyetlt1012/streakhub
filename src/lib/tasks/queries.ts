@@ -1,4 +1,4 @@
-import { desc, eq, and } from "drizzle-orm";
+import { desc, eq, and, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { streaks, tasks } from "@/lib/db/schema";
 
@@ -50,6 +50,11 @@ export async function listTaskStreaksForUser(userId: string) {
   return db
     .select()
     .from(streaks)
-    .where(and(eq(streaks.userId, userId), eq(streaks.proofMode, "task")))
+    .where(
+      and(
+        eq(streaks.userId, userId),
+        sql`'task' = ANY(${streaks.proofModes})`,
+      ),
+    )
     .orderBy(desc(streaks.createdAt));
 }

@@ -9,9 +9,11 @@ import { streakRuns, streaks } from "@/lib/db/schema";
 import {
   DEFAULT_TEXT_MIN_LENGTH,
   ICON_PRESET_MAP,
-  PROOF_MODE_OPTIONS,
   type ProofMode,
 } from "@/lib/streaks/constants";
+import {
+  parseProofModesFromFormData,
+} from "@/lib/streaks/proof-modes";
 import { getStreakForUser } from "@/lib/streaks/queries";
 import {
   formatReminderTimeForDb,
@@ -19,13 +21,12 @@ import {
   getMonthKeyInTimezone,
   isValidTimezone,
 } from "@/lib/streaks/timezone";
+import { recordTargetMilestoneIfReached, validateTargetStreak } from "@/lib/streaks/milestones";
 import { uploadStreakAvatar } from "@/lib/storage/r2";
 
 export type StreakActionState = {
   error?: string;
 };
-
-const PROOF_MODES = new Set<string>(PROOF_MODE_OPTIONS.map((o) => o.value));
 
 async function requireUserId() {
   const session = await auth();
@@ -33,13 +34,6 @@ async function requireUserId() {
     throw new Error("Unauthorized");
   }
   return session.user.id;
-}
-
-function parseProofMode(value: FormDataEntryValue | null): ProofMode | null {
-  if (typeof value !== "string" || !PROOF_MODES.has(value)) {
-    return null;
-  }
-  return value as ProofMode;
 }
 
 function parseIconType(value: FormDataEntryValue | null): "preset" | "upload" | null {
@@ -65,10 +59,15 @@ export async function createStreakAction(
   const reminderTime = (formData.get("reminderTime") as string | null)?.trim() ?? "";
   const iconType = parseIconType(formData.get("iconType"));
   const iconPreset = (formData.get("iconPreset") as string | null)?.trim() ?? "";
-  const proofMode = parseProofMode(formData.get("proofMode"));
+  const proofModesParsed = parseProofModesFromFormData(formData);
   const freezePerMonthRaw = formData.get("freezePerMonth");
   const initialStreakRaw = formData.get("initialStreak");
+  const targetStreakParsed = validateTargetStreak(formData.get("targetStreak"));
   const avatarFile = formData.get("avatar");
+
+  if (targetStreakParsed.error) {
+    return { error: targetStreakParsed.error };
+  }
 
   if (!name) {
     return { error: "Name is required." };
@@ -86,8 +85,8 @@ export async function createStreakAction(
     return { error: "Choose an icon type." };
   }
 
-  if (!proofMode) {
-    return { error: "Select a proof mode." };
+  if (proofModesParsed.error || !proofModesParsed.modes) {
+    return { error: proofModesParsed.error ?? "Select at least one proof option." };
   }
 
   const freezePerMonth = Math.max(
@@ -135,9 +134,10 @@ export async function createStreakAction(
       iconPreset: resolvedIconPreset,
       avatarUrl,
       freezePerMonth,
-      proofMode,
+      proofModes: proofModesParsed.modes,
       textMinLength: DEFAULT_TEXT_MIN_LENGTH,
       initialStreak,
+      targetStreak: targetStreakParsed.value,
       currentStreak: initialStreak,
       bestStreak: initialStreak,
       freezesUsedThisMonth: 0,
@@ -146,7 +146,23 @@ export async function createStreakAction(
     })
     .returning({ id: streaks.id });
 
+  if (targetStreakParsed.value && initialStreak >= targetStreakParsed.value) {
+    const [createdStreak] = await db
+      .select()
+      .from(streaks)
+      .where(eq(streaks.id, created.id))
+      .limit(1);
+
+    if (createdStreak) {
+      await recordTargetMilestoneIfReached({
+        streak: createdStreak,
+        currentStreak: initialStreak,
+      });
+    }
+  }
+
   revalidatePath("/dashboard");
+  revalidatePath("/progress");
   redirect(`/streaks/${created.id}`);
 }
 
@@ -172,10 +188,15 @@ export async function updateStreakAction(
   const reminderTime = (formData.get("reminderTime") as string | null)?.trim() ?? "";
   const iconType = parseIconType(formData.get("iconType"));
   const iconPreset = (formData.get("iconPreset") as string | null)?.trim() ?? "";
-  const proofMode = parseProofMode(formData.get("proofMode"));
+  const proofModesParsed = parseProofModesFromFormData(formData);
   const freezePerMonthRaw = formData.get("freezePerMonth");
+  const targetStreakParsed = validateTargetStreak(formData.get("targetStreak"));
   const avatarFile = formData.get("avatar");
   const removeAvatar = formData.get("removeAvatar") === "true";
+
+  if (targetStreakParsed.error) {
+    return { error: targetStreakParsed.error };
+  }
 
   if (!name) {
     return { error: "Name is required." };
@@ -193,8 +214,8 @@ export async function updateStreakAction(
     return { error: "Choose an icon type." };
   }
 
-  if (!proofMode) {
-    return { error: "Select a proof mode." };
+  if (proofModesParsed.error || !proofModesParsed.modes) {
+    return { error: proofModesParsed.error ?? "Select at least one proof option." };
   }
 
   const freezePerMonth = Math.max(
@@ -237,12 +258,27 @@ export async function updateStreakAction(
       iconPreset: resolvedIconPreset,
       avatarUrl,
       freezePerMonth,
-      proofMode,
+      proofModes: proofModesParsed.modes,
+      targetStreak: targetStreakParsed.value,
       updatedAt: new Date(),
     })
     .where(eq(streaks.id, streakId));
 
+  const [updatedStreak] = await db
+    .select()
+    .from(streaks)
+    .where(eq(streaks.id, streakId))
+    .limit(1);
+
+  if (updatedStreak) {
+    await recordTargetMilestoneIfReached({
+      streak: updatedStreak,
+      currentStreak: updatedStreak.currentStreak,
+    });
+  }
+
   revalidatePath("/dashboard");
+  revalidatePath("/progress");
   revalidatePath(`/streaks/${streakId}`);
   redirect(`/streaks/${streakId}`);
 }

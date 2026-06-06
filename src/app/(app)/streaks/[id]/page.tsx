@@ -8,7 +8,7 @@ import {
   StreakDetailStats,
   StreakPastRuns,
 } from "@/components/streaks/streak-detail-sections";
-import { PROOF_MODE_OPTIONS } from "@/lib/streaks/constants";
+import { formatProofModesLabel, streakAllowsProof } from "@/lib/streaks/proof-modes";
 import { getStreakForUser } from "@/lib/streaks/queries";
 import {
   getRecentCheckIns,
@@ -22,8 +22,8 @@ import {
 } from "@/lib/streaks/timezone";
 import { isProofUploadConfigured } from "@/lib/storage/r2";
 import { db } from "@/lib/db";
-import { streakRuns } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { streakMilestones, streakRuns } from "@/lib/db/schema";
+import { and, desc, eq } from "drizzle-orm";
 
 type StreakDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -47,10 +47,9 @@ export default async function StreakDetailPage({ params }: StreakDetailPageProps
 
   const today = getCalendarDateInTimezone(streak.timezone);
   const checkedInToday = await hasCheckInOn(streak.id, today);
-  const openTasks =
-    streak.proofMode === "task"
-      ? await listOpenTasksForStreak(streak.id, session.user.id)
-      : [];
+  const openTasks = streakAllowsProof(streak, "task")
+    ? await listOpenTasksForStreak(streak.id, session.user.id)
+    : [];
   const recentCheckIns = await getRecentCheckIns(streak.id);
 
   const runs = await db
@@ -59,14 +58,27 @@ export default async function StreakDetailPage({ params }: StreakDetailPageProps
     .where(eq(streakRuns.streakId, id))
     .orderBy(desc(streakRuns.endedOn));
 
-  const proofLabel =
-    PROOF_MODE_OPTIONS.find((o) => o.value === streak.proofMode)?.label ??
-    streak.proofMode;
+  const proofLabel = formatProofModesLabel(streak.proofModes);
 
   const freezesLeft = Math.max(
     0,
     streak.freezePerMonth - streak.freezesUsedThisMonth,
   );
+
+  let targetReached = false;
+  if (streak.targetStreak && streak.targetStreak > 0) {
+    const [milestone] = await db
+      .select({ id: streakMilestones.id })
+      .from(streakMilestones)
+      .where(
+        and(
+          eq(streakMilestones.streakId, streak.id),
+          eq(streakMilestones.targetDays, streak.targetStreak),
+        ),
+      )
+      .limit(1);
+    targetReached = !!milestone;
+  }
 
   return (
     <main className="min-h-screen pb-32 pt-10 font-sans selection:bg-primary/30">
@@ -89,6 +101,8 @@ export default async function StreakDetailPage({ params }: StreakDetailPageProps
           freezesLeft={freezesLeft}
           proofLabel={proofLabel}
           freezePerMonth={streak.freezePerMonth}
+          targetStreak={streak.targetStreak}
+          targetReached={targetReached}
         />
 
         <CheckInForm

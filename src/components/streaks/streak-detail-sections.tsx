@@ -82,6 +82,8 @@ type StreakDetailStatsProps = {
   freezesLeft: number;
   proofLabel: string;
   freezePerMonth: number;
+  targetStreak?: number | null;
+  targetReached?: boolean;
 };
 
 export function StreakDetailStats({
@@ -90,6 +92,8 @@ export function StreakDetailStats({
   freezesLeft,
   proofLabel,
   freezePerMonth,
+  targetStreak,
+  targetReached = false,
 }: StreakDetailStatsProps) {
   const stats = [
     { label: "Current", value: String(currentStreak), highlight: true },
@@ -125,6 +129,39 @@ export function StreakDetailStats({
           </div>
         ))}
       </div>
+      {targetStreak && targetStreak > 0 ? (
+        <div className="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Target
+            </span>
+            <span
+              className={cn(
+                "text-[10px] font-bold uppercase tracking-widest",
+                targetReached ? "text-primary" : "text-foreground",
+              )}
+            >
+              {Math.min(currentStreak, targetStreak)} / {targetStreak} days
+            </span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all",
+                targetReached ? "bg-primary" : "bg-primary/70",
+              )}
+              style={{
+                width: `${Math.min(100, Math.round((currentStreak / targetStreak) * 100))}%`,
+              }}
+            />
+          </div>
+          {targetReached ? (
+            <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-primary">
+              Milestone saved on Progress
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
         {freezePerMonth} freeze{freezePerMonth === 1 ? "" : "s"} per month
       </p>

@@ -42,10 +42,13 @@ export const streaks = pgTable(
     iconPreset: text("icon_preset"),
     avatarUrl: text("avatar_url"),
     freezePerMonth: integer("freeze_per_month").notNull().default(0),
-    proofMode: proofModeEnum("proof_mode").notNull().default("none"),
+    /** Allowed proof methods; user picks one when checking in */
+    proofModes: proofModeEnum("proof_modes").array().notNull().default(["none"]),
     textMinLength: integer("text_min_length").notNull().default(15),
     /** Set once at creation; does not backfill check-ins */
     initialStreak: integer("initial_streak").notNull().default(0),
+    /** Optional day-count goal; reaching it records a milestone */
+    targetStreak: integer("target_streak"),
     currentStreak: integer("current_streak").notNull().default(0),
     bestStreak: integer("best_streak").notNull().default(0),
     freezesUsedThisMonth: integer("freezes_used_this_month")
@@ -55,8 +58,10 @@ export const streaks = pgTable(
     freezeMonthKey: text("freeze_month_key"),
     /** Calendar day (streak TZ) when the active run started */
     currentRunStartedOn: date("current_run_started_on"),
-    /** Last calendar day a Telegram reminder was sent (streak TZ) */
+    /** Last calendar day a Telegram reminder was sent (streak TZ) — deprecated, use lastReminderSentAt */
     lastReminderSentOn: date("last_reminder_sent_on"),
+    /** When the last per-streak reminder was sent (for repeat until check-in) */
+    lastReminderSentAt: timestamp("last_reminder_sent_at", { mode: "date" }),
     /** Future-only sync fields (no V1 UI) */
     externalSource: text("external_source"),
     externalId: text("external_id"),
