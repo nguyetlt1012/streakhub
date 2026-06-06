@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AppIcon } from "@/components/icons/app-icon";
 import { PROOF_MODE_OPTIONS } from "@/lib/streaks/constants";
 import { getProofModeOptionLabel } from "@/lib/streaks/proof-modes";
@@ -47,14 +48,14 @@ function CheckInProofPanel({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="check-in-proof-title"
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
+        className="max-h-[min(85vh,calc(100dvh-2rem))] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -134,6 +135,11 @@ export function CheckInHistory({
   timezone,
 }: CheckInHistoryProps) {
   const [selected, setSelected] = useState<CheckInHistoryItem | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!selected) {
@@ -219,9 +225,15 @@ export function CheckInHistory({
         </ul>
       )}
 
-      {selected ? (
-        <CheckInProofPanel checkIn={selected} onClose={() => setSelected(null)} />
-      ) : null}
+      {mounted && selected
+        ? createPortal(
+            <CheckInProofPanel
+              checkIn={selected}
+              onClose={() => setSelected(null)}
+            />,
+            document.body,
+          )
+        : null}
     </section>
   );
 }
