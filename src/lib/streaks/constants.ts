@@ -122,7 +122,7 @@ export const COMMON_TIMEZONES = [
 ] as const;
 
 export const DEFAULT_TEXT_MIN_LENGTH = 15;
-export const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+export const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_AVATAR_TYPES = [
   "image/jpeg",
   "image/png",
