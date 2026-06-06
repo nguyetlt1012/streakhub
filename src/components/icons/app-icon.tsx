@@ -22,6 +22,7 @@ const ICONS = {
   right: "mingcute:right-line",
   download: "mingcute:download-2-line",
   lock: "mingcute:lock-line",
+  close: "mingcute:close-line",
   fire: "mingcute:fire-fill",
 } as const;
 

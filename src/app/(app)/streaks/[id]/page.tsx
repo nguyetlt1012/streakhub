@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { CheckInForm } from "@/components/streaks/check-in-form";
+import { CheckInHistory } from "@/components/streaks/check-in-history";
 import { DeleteStreakButton } from "@/components/streaks/delete-streak-button";
 import {
-  StreakCheckInHistory,
   StreakDetailHeader,
   StreakDetailStats,
   StreakPastRuns,
@@ -112,10 +112,7 @@ export default async function StreakDetailPage({ params }: StreakDetailPageProps
           openTasks={openTasks}
         />
 
-        <StreakCheckInHistory
-          checkIns={recentCheckIns}
-          timezone={streak.timezone}
-        />
+        <CheckInHistory checkIns={recentCheckIns} timezone={streak.timezone} />
         <StreakPastRuns runs={runs} />
         <DeleteStreakButton streakId={streak.id} streakName={streak.name} />
       </div>

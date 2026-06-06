@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/icons/app-icon";
 import { StreakIcon } from "@/components/streaks/streak-icon";
-import { PROOF_MODE_OPTIONS } from "@/lib/streaks/constants";
-import { formatTimeInTimezone } from "@/lib/streaks/timezone";
 import { cn } from "@/lib/utils";
 
 type StreakDetailHeaderProps = {
@@ -166,71 +164,6 @@ export function StreakDetailStats({
         {freezePerMonth} freeze{freezePerMonth === 1 ? "" : "s"} per month
       </p>
     </div>
-  );
-}
-
-type CheckInItem = {
-  id: string;
-  checkInDate: string;
-  createdAt: Date;
-  proofMode: string;
-  textContent: string | null;
-  caption: string | null;
-};
-
-const PROOF_LABELS = Object.fromEntries(
-  PROOF_MODE_OPTIONS.map((option) => [option.value, option.label]),
-) as Record<string, string>;
-
-export function StreakCheckInHistory({
-  checkIns,
-  timezone,
-}: {
-  checkIns: CheckInItem[];
-  timezone: string;
-}) {
-  return (
-    <section className="mb-10">
-      <h2 className="mb-4 font-heading text-xl uppercase tracking-wider text-foreground">
-        Recent Check-ins
-      </h2>
-      {checkIns.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No check-ins yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {checkIns.map((checkIn) => (
-            <li
-              key={checkIn.id}
-              className="rounded-lg border border-border bg-card px-4 py-3 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="font-bold uppercase tracking-wide text-foreground">
-                    {checkIn.checkInDate}
-                  </span>
-                  <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {PROOF_LABELS[checkIn.proofMode] ?? checkIn.proofMode}
-                  </p>
-                </div>
-                <span className="font-heading text-xl leading-none text-primary">
-                  {formatTimeInTimezone(timezone, checkIn.createdAt)}
-                </span>
-              </div>
-              {checkIn.textContent ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {checkIn.textContent}
-                </p>
-              ) : null}
-              {checkIn.caption ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {checkIn.caption}
-                </p>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }
 

@@ -5,6 +5,7 @@ import {
   streakFreezeDays,
   streakRuns,
   streaks,
+  tasks,
 } from "@/lib/db/schema";
 import type { streaks as streaksTable } from "@/lib/db/schema/streaks";
 import {
@@ -423,8 +424,19 @@ export async function getTodayCheckInsForUser(userId: string) {
 
 export async function getRecentCheckIns(streakId: string, limit = 30) {
   return db
-    .select()
+    .select({
+      id: checkIns.id,
+      checkInDate: checkIns.checkInDate,
+      createdAt: checkIns.createdAt,
+      proofMode: checkIns.proofMode,
+      photoUrl: checkIns.photoUrl,
+      caption: checkIns.caption,
+      textContent: checkIns.textContent,
+      taskId: checkIns.taskId,
+      taskTitle: tasks.title,
+    })
     .from(checkIns)
+    .leftJoin(tasks, eq(checkIns.taskId, tasks.id))
     .where(eq(checkIns.streakId, streakId))
     .orderBy(desc(checkIns.checkInDate))
     .limit(limit);
